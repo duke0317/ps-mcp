@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "ps-mcp": {
+      "command": "python",
+      "args": [
+        "F:\\AiWorkSpace\\ps-mcp\\main.py"
+      ],
+      "cwd": "F:\\AiWorkSpace\\ps-mcp",
+      "env": {
+        "PYTHONPATH": "F:\\AiWorkSpace\\ps-mcp",
+        "PS_MCP_LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}

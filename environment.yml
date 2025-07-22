@@ -1,0 +1,16 @@
+name: image-mcp
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pillow
+  - opencv
+  - pip:
+    - mcp
+    - asyncio
+    - typing-extensions
+    - pytest
+    - pytest-asyncio

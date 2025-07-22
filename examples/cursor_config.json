@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "ps-mcp": {
+      "command": "python",
+      "args": [
+        "F:\\AiWorkSpace\\ps-mcp\\main.py"
+      ],
+      "cwd": "F:\\AiWorkSpace\\ps-mcp"
+    }
+  }
+}
