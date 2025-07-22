@@ -195,14 +195,14 @@ async def resize_image(image_source: str, width: int, height: int,
             resample_methods[resample.upper()]
         )
         
-        # 转换为base64
-        result_data = processor.image_to_base64(resized_image)
+        # 输出调整后的图片
+        output_info = processor.output_image(resized_image, f"resize_{new_width}x{new_height}")
         
         result = {
             "success": True,
             "message": f"图片大小调整成功: {original_size} -> {(new_width, new_height)}",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "original_size": original_size,
                 "new_size": (new_width, new_height),
                 "keep_aspect_ratio": keep_aspect_ratio,
@@ -253,14 +253,14 @@ async def crop_image(image_data: str, left: int, top: int, right: int, bottom: i
         # 裁剪图片
         cropped_image = image.crop((left, top, right, bottom))
         
-        # 转换为base64
-        result_data = processor.image_to_base64(cropped_image)
+        # 输出裁剪后的图片
+        output_info = processor.output_image(cropped_image, f"crop_{left}_{top}_{right}_{bottom}")
         
         result = {
             "success": True,
             "message": f"图片裁剪成功: ({left}, {top}, {right}, {bottom})",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "original_size": (image_width, image_height),
                 "crop_box": (left, top, right, bottom),
                 "cropped_size": cropped_image.size
@@ -318,14 +318,14 @@ async def rotate_image(image_data: str, angle: float, expand: bool = True, fill_
             fillcolor=fill_rgb
         )
         
-        # 转换为base64
-        result_data = processor.image_to_base64(rotated_image)
+        # 输出旋转后的图片
+        output_info = processor.output_image(rotated_image, f"rotate_{int(angle)}deg")
         
         result = {
             "success": True,
             "message": f"图片旋转成功: {angle}度",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "original_size": original_size,
                 "rotated_size": rotated_image.size,
                 "angle": angle,
@@ -380,14 +380,14 @@ async def flip_image(image_data: str, direction: str) -> list[TextContent]:
             flipped_image = image.transpose(Image.FLIP_TOP_BOTTOM)
             direction_desc = "垂直翻转"
         
-        # 转换为base64
-        result_data = processor.image_to_base64(flipped_image)
+        # 输出翻转后的图片
+        output_info = processor.output_image(flipped_image, f"flip_{direction}")
         
         result = {
             "success": True,
             "message": f"图片{direction_desc}成功",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "direction": direction,
                 "size": image.size
             }

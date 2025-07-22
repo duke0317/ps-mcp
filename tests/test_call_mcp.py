@@ -116,33 +116,47 @@ def process_test_result(result, test_name, test_number):
         result_data = json.loads(result_text)
         
         if result_data.get("success"):
-            # 检查图片数据格式
-            base64_data = None
+            # 检查新的输出格式
+            data = result_data.get("data", {})
             
-            # 使用统一的 data.image_data 格式
-            if "data" in result_data and "image_data" in result_data["data"]:
-                base64_data = result_data["data"]["image_data"]
+            # 新格式：包含 file_path 和其他信息（可能没有 image_data）
+            if "file_path" in data:
+                # 创建清理后的数据副本
+                clean_data = result_data.copy()
+                
+                # 如果有 image_data，替换为文件路径信息
+                if "image_data" in data:
+                    clean_data["data"]["image_data"] = f"Base64数据已保存到: {data['file_path']}"
+                
+                # 显示文件信息
+                file_info = f"文件已保存到: {data['file_path']}"
+                if "file_size" in data:
+                    file_info += f" (大小: {data['file_size']} 字节)"
+                if "format" in data:
+                    file_info += f" (格式: {data['format']})"
+                
+                clean_data["data"]["file_info"] = file_info
+                
+                return json.dumps(clean_data, ensure_ascii=False, indent=2)
             
-            # 如果找到图片数据，保存图片
-            if base64_data:
-                # 生成文件名
+            # 兼容旧格式：只有 image_data
+            elif "image_data" in data:
+                base64_data = data["image_data"]
+                
+                # 生成文件名并保存
                 safe_test_name = re.sub(r'[^\w\-_]', '_', test_name)
                 filename = f"test_{test_number:02d}_{safe_test_name}.png"
-                
-                # 保存图片
                 saved_path = save_base64_image(base64_data, filename)
                 
                 if saved_path:
-                    # 返回不包含base64数据的结果
                     clean_data = result_data.copy()
-                    if "data" in clean_data and "image_data" in clean_data["data"]:
-                        clean_data["data"]["image_data"] = f"已保存到: {saved_path}"
-                    
+                    clean_data["data"]["image_data"] = f"已保存到: {saved_path}"
                     return json.dumps(clean_data, ensure_ascii=False, indent=2)
                 else:
                     return result_text
+            
+            # 没有图片数据的结果（如性能统计、图片信息等）
             else:
-                # 没有图片数据，直接返回
                 return json.dumps(result_data, ensure_ascii=False, indent=2)
         else:
             return result_text
@@ -178,7 +192,7 @@ async def test_image_processing():
     test_image = create_test_image()
     
     # 配置路径
-    current_dir = Path(__file__).parent
+    current_dir = Path(__file__).parent.parent  # 回到项目根目录
     server_script = current_dir / "main.py"
     python_path = r"D:\App\Miniconda3\envs\image-mcp\python.exe"
     
@@ -209,77 +223,77 @@ async def test_image_processing():
                 print(f"✅ 发现 {len(tools)} 个工具: {list(tools.keys())}")
                 
                 # 测试1: 获取图片信息
-                # print("\n📋 测试1: 获取图片信息...")
-                # result = await session.call_tool("get_image_info", {
-                #     "image_source": test_image
-                # })
-                # processed_result = process_test_result(result, "获取图片信息", 1)
-                # print(f"✅ 测试 1: 获取图片信息")
-                # print(f"结果: {processed_result}")
+                print("\n📋 测试1: 获取图片信息...")
+                result = await session.call_tool("get_image_info", {
+                    "image_source": test_image
+                })
+                processed_result = process_test_result(result, "获取图片信息", 1)
+                print(f"✅ 测试 1: 获取图片信息")
+                print(f"结果: {processed_result}")
                 
-                # # 测试2: 调整图片大小
-                # print("\n📏 测试2: 调整图片大小...")
-                # result = await session.call_tool("resize_image", {
-                #     "image_source": test_image,
-                #     "width": 200,
-                #     "height": 200
-                # })
-                # processed_result = process_test_result(result, "调整图片大小", 2)
-                # print(f"✅ 测试 2: 调整图片大小")
-                # print(f"结果: {processed_result}")
+                # 测试2: 调整图片大小
+                print("\n📏 测试2: 调整图片大小...")
+                result = await session.call_tool("resize_image", {
+                    "image_source": test_image,
+                    "width": 200,
+                    "height": 200
+                })
+                processed_result = process_test_result(result, "调整图片大小", 2)
+                print(f"✅ 测试 2: 调整图片大小")
+                print(f"结果: {processed_result}")
                 
-                # # 测试3: 转换图片格式
-                # print("\n🔄 测试3: 转换图片格式...")
-                # result = await session.call_tool("convert_format", {
-                #     "image_source": test_image,
-                #     "output_format": "JPEG"
-                # })
-                # processed_result = process_test_result(result, "转换图片格式", 3)
-                # print(f"✅ 测试 3: 转换图片格式")
-                # print(f"结果: {processed_result}")
+                # 测试3: 转换图片格式
+                print("\n🔄 测试3: 转换图片格式...")
+                result = await session.call_tool("convert_format", {
+                    "image_source": test_image,
+                    "target_format": "JPEG"
+                })
+                processed_result = process_test_result(result, "转换图片格式", 3)
+                print(f"✅ 测试 3: 转换图片格式")
+                print(f"结果: {processed_result}")
                 
-                # # 测试4: 应用模糊效果
-                # print("\n🌫️ 测试4: 应用模糊效果...")
-                # result = await session.call_tool("apply_blur", {
-                #     "image_source": test_image,
-                #     "radius": 2.0
-                # })
-                # processed_result = process_test_result(result, "应用模糊效果", 4)
-                # print(f"✅ 测试 4: 应用模糊效果")
-                # print(f"结果: {processed_result}")
+                # 测试4: 应用模糊效果
+                print("\n🌫️ 测试4: 应用模糊效果...")
+                result = await session.call_tool("apply_blur", {
+                    "image_source": test_image,
+                    "radius": 2.0
+                })
+                processed_result = process_test_result(result, "应用模糊效果", 4)
+                print(f"✅ 测试 4: 应用模糊效果")
+                print(f"结果: {processed_result}")
                     
                 # 测试5: 裁剪图片
-                # print("\n✂️ 测试5: 裁剪图片...")
-                # result = await session.call_tool("crop_image", {
-                #     "image_source": test_image,
-                #     "left": 125,
-                #     "top": 25,
-                #     "right": 1175,
-                #     "bottom": 1275
-                # })
-                # processed_result = process_test_result(result, "裁剪图片", 5)
-                # print(f"✅ 测试 5: 裁剪图片")
-                # print(f"结果: {processed_result}")
+                print("\n✂️ 测试5: 裁剪图片...")
+                result = await session.call_tool("crop_image", {
+                    "image_source": test_image,
+                    "left": 125,
+                    "top": 25,
+                    "right": 1175,
+                    "bottom": 1275
+                })
+                processed_result = process_test_result(result, "裁剪图片", 5)
+                print(f"✅ 测试 5: 裁剪图片")
+                print(f"结果: {processed_result}")
                 
-                # # 测试6: 旋转图片
-                # print("\n🔄 测试6: 旋转图片...")
-                # result = await session.call_tool("rotate_image", {
-                #     "image_source": test_image,
-                #     "angle": 45
-                # })
-                # processed_result = process_test_result(result, "旋转图片", 6)
-                # print(f"✅ 测试 6: 旋转图片")
-                # print(f"结果: {processed_result}")
+                # 测试6: 旋转图片
+                print("\n🔄 测试6: 旋转图片...")
+                result = await session.call_tool("rotate_image", {
+                    "image_source": test_image,
+                    "angle": 45
+                })
+                processed_result = process_test_result(result, "旋转图片", 6)
+                print(f"✅ 测试 6: 旋转图片")
+                print(f"结果: {processed_result}")
                 
-                # # 测试7: 翻转图片
-                # print("\n🔄 测试7: 翻转图片...")
-                # result = await session.call_tool("flip_image", {
-                #     "image_source": test_image,
-                #     "direction": "horizontal"
-                # })
-                # processed_result = process_test_result(result, "翻转图片", 7)
-                # print(f"✅ 测试 7: 翻转图片")
-                # print(f"结果: {processed_result}")
+                # 测试7: 翻转图片
+                print("\n🔄 测试7: 翻转图片...")
+                result = await session.call_tool("flip_image", {
+                    "image_source": test_image,
+                    "direction": "horizontal"
+                })
+                processed_result = process_test_result(result, "翻转图片", 7)
+                print(f"✅ 测试 7: 翻转图片")
+                print(f"结果: {processed_result}")
                 
                 # 测试8: 调整亮度
                 print("\n☀️ 测试8: 调整亮度...")
@@ -488,22 +502,32 @@ async def test_image_processing():
                 print(f"✅ 测试 28: 调整伽马值")
                 print(f"结果: {processed_result}")
                 
-                # 测试29: 应用轮廓滤镜
-                print("\n📐 测试29: 应用轮廓滤镜...")
+                # 测试29: 调整不透明度
+                print("\n🔍 测试29: 调整不透明度...")
+                result = await session.call_tool("adjust_opacity", {
+                    "image_source": test_image,
+                    "opacity": 0.7
+                })
+                processed_result = process_test_result(result, "调整不透明度", 29)
+                print(f"✅ 测试 29: 调整不透明度")
+                print(f"结果: {processed_result}")
+                
+                # 测试30: 应用轮廓滤镜
+                print("\n📐 测试30: 应用轮廓滤镜...")
                 result = await session.call_tool("apply_contour", {
                     "image_source": test_image
                 })
-                processed_result = process_test_result(result, "应用轮廓滤镜", 29)
-                print(f"✅ 测试 29: 应用轮廓滤镜")
+                processed_result = process_test_result(result, "应用轮廓滤镜", 30)
+                print(f"✅ 测试 30: 应用轮廓滤镜")
                 print(f"结果: {processed_result}")
                 
-                # 测试30: 应用平滑滤镜
-                print("\n🌊 测试30: 应用平滑滤镜...")
+                # 测试31: 应用平滑滤镜
+                print("\n🌊 测试31: 应用平滑滤镜...")
                 result = await session.call_tool("apply_smooth", {
                     "image_source": test_image
                 })
-                processed_result = process_test_result(result, "应用平滑滤镜", 30)
-                print(f"✅ 测试 30: 应用平滑滤镜")
+                processed_result = process_test_result(result, "应用平滑滤镜", 31)
+                print(f"✅ 测试 31: 应用平滑滤镜")
                 print(f"结果: {processed_result}")
                 
                 print("\n🎉 所有图片处理功能测试完成!")
@@ -515,12 +539,12 @@ async def test_image_processing():
                 print("✅ 基础工具测试: 2个")
                 print("✅ 几何变换工具测试: 4个") 
                 print("✅ 滤镜工具测试: 9个")
-                print("✅ 色彩调整工具测试: 6个")
+                print("✅ 色彩调整工具测试: 7个")
                 print("✅ 特效工具测试: 6个")
                 print("✅ 高级工具测试: 2个")
                 print("✅ 性能监控工具测试: 1个")
                 print("-"*60)
-                print("🎯 总计: 30个测试用例全部完成")
+                print("🎯 总计: 31个测试用例全部完成")
                 print("="*60)
                 
     except Exception as e:

@@ -376,7 +376,9 @@ async def batch_resize(arguments: Dict[str, Any]) -> List[TextContent]:
                     # 强制调整到指定尺寸
                     resized_image = image.resize((width, height), resample)
                 
-                return processor.image_to_base64(resized_image, output_format)
+                # 输出图片
+                output_info = processor.output_image(resized_image, "batch_resize", output_format)
+                return output_info
             except Exception as e:
                 return f"ERROR: {str(e)}"
         
@@ -551,7 +553,7 @@ async def create_collage(arguments: Dict[str, Any]) -> List[TextContent]:
                 collage.paste(img, (x_offset, y_offset))
         
         # 转换为base64
-        result_base64 = processor.image_to_base64(collage, output_format)
+        output_info = processor.output_image(collage, "batch_resize", output_format)
         
         return [TextContent(
             type="text",
@@ -559,7 +561,7 @@ async def create_collage(arguments: Dict[str, Any]) -> List[TextContent]:
                 "success": True,
                 "message": f"成功创建{layout}拼贴",
                 "data": {
-                    "image_data": result_base64,
+                    **output_info,
                     "metadata": {
                         "image_count": len(images),
                         "layout": layout,
@@ -677,7 +679,7 @@ async def create_thumbnail_grid(arguments: Dict[str, Any]) -> List[TextContent]:
             grid.paste(thumb, (x, y))
         
         # 转换为base64
-        result_base64 = processor.image_to_base64(grid, output_format)
+        output_info = processor.output_image(grid, "batch_resize", output_format)
         
         return [TextContent(
             type="text",
@@ -685,7 +687,7 @@ async def create_thumbnail_grid(arguments: Dict[str, Any]) -> List[TextContent]:
                 "success": True,
                 "message": f"成功创建{len(thumbnails)}个缩略图的网格",
                 "data": {
-                    "image_data": result_base64,
+                    **output_info,
                     "metadata": {
                         "thumbnail_count": len(thumbnails),
                         "grid_size": f"{grid.width}x{grid.height}",
@@ -795,7 +797,7 @@ async def blend_images(arguments: Dict[str, Any]) -> List[TextContent]:
             result = Image.alpha_composite(image1, image2)
         
         # 转换为base64
-        result_base64 = processor.image_to_base64(result, output_format)
+        output_info = processor.output_image(result, "batch_resize", output_format)
         
         return [TextContent(
             type="text",
@@ -803,7 +805,7 @@ async def blend_images(arguments: Dict[str, Any]) -> List[TextContent]:
                 "success": True,
                 "message": f"成功混合图片，使用{blend_mode}模式",
                 "data": {
-                    "image_data": result_base64,
+                    **output_info,
                     "metadata": {
                         "size": f"{result.width}x{result.height}",
                         "blend_mode": blend_mode,
@@ -847,7 +849,7 @@ async def extract_colors(arguments: Dict[str, Any]) -> List[TextContent]:
         image_source = arguments.get("image_source")
         ensure_valid_image_source(image_source)
         
-        color_count = arguments.get("color_count", 5)
+        color_count = arguments.get("color_count") or arguments.get("num_colors", 5)
         create_palette = arguments.get("create_palette", True)
         palette_width = arguments.get("palette_width", 400)
         palette_height = arguments.get("palette_height", 100)
@@ -870,15 +872,22 @@ async def extract_colors(arguments: Dict[str, Any]) -> List[TextContent]:
         
         # 提取RGB颜色值
         colors = []
-        for i in range(color_count):
-            r = palette_colors[i * 3]
-            g = palette_colors[i * 3 + 1]
-            b = palette_colors[i * 3 + 2]
-            hex_color = f"#{r:02x}{g:02x}{b:02x}"
-            colors.append({
-                "rgb": [r, g, b],
-                "hex": hex_color
-            })
+        # 确保不超过实际可用的颜色数量
+        actual_color_count = min(color_count, len(palette_colors) // 3)
+        
+        for i in range(actual_color_count):
+            try:
+                r = palette_colors[i * 3]
+                g = palette_colors[i * 3 + 1] 
+                b = palette_colors[i * 3 + 2]
+                hex_color = f"#{r:02x}{g:02x}{b:02x}"
+                colors.append({
+                    "rgb": [r, g, b],
+                    "hex": hex_color
+                })
+            except IndexError:
+                # 如果索引越界，停止添加颜色
+                break
         
         result_data = {
             "success": True,
@@ -905,8 +914,9 @@ async def extract_colors(arguments: Dict[str, Any]) -> List[TextContent]:
                     for y in range(palette_height):
                         palette_image.putpixel((x, y), color_rgb)
             
-            palette_base64 = processor.image_to_base64(palette_image, "PNG")
-            result_data["palette"] = palette_base64
+            # 输出调色板图片
+            palette_output = processor.output_image(palette_image, "extract_colors", "PNG")
+            result_data["palette"] = palette_output
             result_data["metadata"]["palette_size"] = f"{palette_width}x{palette_height}"
         
         return [TextContent(

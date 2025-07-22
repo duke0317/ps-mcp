@@ -376,7 +376,7 @@ async def add_border(arguments: Dict[str, Any]) -> List[TextContent]:
             bordered_image.paste(image, (border_width, border_width))
         
         # 转换为base64
-        result_base64 = processor.image_to_base64(bordered_image, output_format)
+        output_info = processor.output_image(bordered_image, "border", output_format)
         
         return [TextContent(
             type="text",
@@ -384,7 +384,7 @@ async def add_border(arguments: Dict[str, Any]) -> List[TextContent]:
                 "success": True,
                 "message": f"成功添加{border_style}边框效果",
                 "data": {
-                    "image_data": result_base64,
+                    **output_info,
                     "metadata": {
                         "original_size": f"{image.width}x{image.height}",
                         "new_size": f"{bordered_image.width}x{bordered_image.height}",
@@ -477,7 +477,7 @@ async def create_silhouette(arguments: Dict[str, Any]) -> List[TextContent]:
             final_image = silhouette
         
         # 转换为base64
-        result_base64 = processor.image_to_base64(final_image, output_format)
+        output_info = processor.output_image(final_image, "silhouette", output_format)
         
         return [TextContent(
             type="text",
@@ -485,7 +485,7 @@ async def create_silhouette(arguments: Dict[str, Any]) -> List[TextContent]:
                 "success": True,
                 "message": "成功创建剪影效果",
                 "data": {
-                    "image_data": result_base64,
+                    **output_info,
                     "metadata": {
                         "size": f"{image.width}x{image.height}",
                         "silhouette_color": silhouette_color,
@@ -592,7 +592,7 @@ async def add_shadow(arguments: Dict[str, Any]) -> List[TextContent]:
         result_image.paste(image, (image_x, image_y), image)
         
         # 转换为base64
-        result_base64 = processor.image_to_base64(result_image, output_format)
+        output_info = processor.output_image(result_image, "border", output_format)
         
         return [TextContent(
             type="text",
@@ -600,7 +600,7 @@ async def add_shadow(arguments: Dict[str, Any]) -> List[TextContent]:
                 "success": True,
                 "message": "成功添加阴影效果",
                 "data": {
-                    "image_data": result_base64,
+                    **output_info,
                     "metadata": {
                         "original_size": f"{image.width}x{image.height}",
                         "new_size": f"{result_image.width}x{result_image.height}",
@@ -742,7 +742,7 @@ async def add_watermark(arguments: Dict[str, Any]) -> List[TextContent]:
         result_image = Image.alpha_composite(image, watermark_layer)
         
         # 转换为base64
-        result_base64 = processor.image_to_base64(result_image, output_format)
+        output_info = processor.output_image(result_image, "border", output_format)
         
         return [TextContent(
             type="text",
@@ -750,7 +750,7 @@ async def add_watermark(arguments: Dict[str, Any]) -> List[TextContent]:
                 "success": True,
                 "message": "成功添加水印",
                 "data": {
-                    "image_data": result_base64,
+                    **output_info,
                     "metadata": {
                         "size": f"{image.width}x{image.height}",
                         "watermark_type": "text" if watermark_text else "image",
@@ -853,7 +853,7 @@ async def apply_vignette(arguments: Dict[str, Any]) -> List[TextContent]:
         result_image = Image.alpha_composite(image, vignette_layer)
         
         # 转换为base64
-        result_base64 = processor.image_to_base64(result_image, output_format)
+        output_info = processor.output_image(result_image, "border", output_format)
         
         return [TextContent(
             type="text",
@@ -861,7 +861,7 @@ async def apply_vignette(arguments: Dict[str, Any]) -> List[TextContent]:
                 "success": True,
                 "message": "成功添加暗角效果",
                 "data": {
-                    "image_data": result_base64,
+                    **output_info,
                     "metadata": {
                         "size": f"{image.width}x{image.height}",
                         "intensity": intensity,
@@ -967,7 +967,7 @@ async def create_polaroid(arguments: Dict[str, Any]) -> List[TextContent]:
         final_image.paste(polaroid, (0, 0), polaroid)
         
         # 转换为base64
-        result_base64 = processor.image_to_base64(final_image, output_format)
+        output_info = processor.output_image(final_image, "border", output_format)
         
         return [TextContent(
             type="text",
@@ -975,7 +975,7 @@ async def create_polaroid(arguments: Dict[str, Any]) -> List[TextContent]:
                 "success": True,
                 "message": "成功创建宝丽来效果",
                 "data": {
-                    "image_data": result_base64,
+                    **output_info,
                     "metadata": {
                         "original_size": f"{image.width}x{image.height}",
                         "polaroid_size": f"{final_image.width}x{final_image.height}",

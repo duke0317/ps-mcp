@@ -201,14 +201,14 @@ async def apply_blur(image_source: str, radius: float) -> list[TextContent]:
         # 应用模糊滤镜
         blurred_image = image.filter(ImageFilter.BoxBlur(radius))
         
-        # 转换为base64
-        result_data = processor.image_to_base64(blurred_image)
+        # 输出处理后的图片
+        output_info = processor.output_image(blurred_image, "blur")
         
         result = {
             "success": True,
             "message": f"模糊滤镜应用成功: 半径 {radius}",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "blur",
                 "radius": radius,
                 "size": image.size
@@ -256,14 +256,14 @@ async def apply_gaussian_blur(image_data: str, radius: float) -> list[TextConten
         # 应用高斯模糊滤镜
         blurred_image = image.filter(ImageFilter.GaussianBlur(radius))
         
-        # 转换为base64
-        result_data = processor.image_to_base64(blurred_image)
+        # 输出处理后的图片
+        output_info = processor.output_image(blurred_image, "gaussian_blur")
         
         result = {
             "success": True,
             "message": f"高斯模糊滤镜应用成功: 半径 {radius}",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "gaussian_blur",
                 "radius": radius,
                 "size": image.size
@@ -307,14 +307,14 @@ async def apply_sharpen(image_data: str) -> list[TextContent]:
         # 应用锐化滤镜
         sharpened_image = image.filter(ImageFilter.SHARPEN)
         
-        # 转换为base64
-        result_data = processor.image_to_base64(sharpened_image)
+        # 输出处理后的图片
+        output_info = processor.output_image(sharpened_image, "sharpen")
         
         result = {
             "success": True,
             "message": "锐化滤镜应用成功",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "sharpen",
                 "size": image.size
             }
@@ -357,14 +357,14 @@ async def apply_edge_enhance(image_data: str) -> list[TextContent]:
         # 应用边缘增强滤镜
         enhanced_image = image.filter(ImageFilter.EDGE_ENHANCE)
         
-        # 转换为base64
-        result_data = processor.image_to_base64(enhanced_image)
+        # 输出处理后的图片
+        output_info = processor.output_image(enhanced_image, "edge_enhance")
         
         result = {
             "success": True,
             "message": "边缘增强滤镜应用成功",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "edge_enhance",
                 "size": image.size
             }
@@ -407,14 +407,14 @@ async def apply_emboss(image_data: str) -> list[TextContent]:
         # 应用浮雕滤镜
         embossed_image = image.filter(ImageFilter.EMBOSS)
         
-        # 转换为base64
-        result_data = processor.image_to_base64(embossed_image)
+        # 输出处理后的图片
+        output_info = processor.output_image(embossed_image, "emboss")
         
         result = {
             "success": True,
             "message": "浮雕滤镜应用成功",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "emboss",
                 "size": image.size
             }
@@ -457,14 +457,14 @@ async def apply_find_edges(image_data: str) -> list[TextContent]:
         # 应用边缘检测滤镜
         edges_image = image.filter(ImageFilter.FIND_EDGES)
         
-        # 转换为base64
-        result_data = processor.image_to_base64(edges_image)
+        # 输出处理后的图片
+        output_info = processor.output_image(edges_image, "find_edges")
         
         result = {
             "success": True,
             "message": "边缘检测滤镜应用成功",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "find_edges",
                 "size": image.size
             }
@@ -507,14 +507,14 @@ async def apply_smooth(image_data: str) -> list[TextContent]:
         # 应用平滑滤镜
         smooth_image = image.filter(ImageFilter.SMOOTH)
         
-        # 转换为base64
-        result_data = processor.image_to_base64(smooth_image)
+        # 输出处理后的图片
+        output_info = processor.output_image(smooth_image, "smooth")
         
         result = {
             "success": True,
             "message": "平滑滤镜应用成功",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "smooth",
                 "size": image.size
             }
@@ -557,14 +557,14 @@ async def apply_contour(image_data: str) -> list[TextContent]:
         # 应用轮廓滤镜
         contour_image = image.filter(ImageFilter.CONTOUR)
         
-        # 转换为base64
-        result_data = processor.image_to_base64(contour_image)
+        # 输出处理后的图片
+        output_info = processor.output_image(contour_image, "contour")
         
         result = {
             "success": True,
             "message": "轮廓滤镜应用成功",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "contour",
                 "size": image.size
             }
@@ -628,14 +628,14 @@ async def apply_sepia(image_data: str) -> list[TextContent]:
                 
                 pixels[x, y] = (tr, tg, tb)
         
-        # 转换为base64
-        result_data = processor.image_to_base64(image)
+        # 输出处理后的图片
+        output_info = processor.output_image(image, "sepia")
         
         result = {
             "success": True,
             "message": "复古棕褐色滤镜应用成功",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "sepia",
                 "size": image.size
             }
@@ -678,14 +678,14 @@ async def apply_invert(image_data: str) -> list[TextContent]:
         # 应用反色滤镜
         inverted_image = ImageOps.invert(image.convert('RGB'))
         
-        # 转换为base64
-        result_data = processor.image_to_base64(inverted_image)
+        # 输出处理后的图片
+        output_info = processor.output_image(inverted_image, "invert")
         
         result = {
             "success": True,
             "message": "反色滤镜应用成功",
             "data": {
-                "image_data": result_data,
+                **output_info,
                 "filter_type": "invert",
                 "size": image.size
             }

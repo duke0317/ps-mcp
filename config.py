@@ -68,6 +68,11 @@ MAX_COLLAGE_SIZE = 4096  # 最大拼贴尺寸
 MAX_EXTRACT_COLORS = 50  # 最大提取颜色数量
 MIN_EXTRACT_COLORS = 1  # 最小提取颜色数量
 
+# 输出模式配置
+OUTPUT_MODE = "file_ref"  # 默认使用文件引用模式
+TEMP_DIR = "temp"  # 临时文件目录
+USE_OPERATION_PREFIX = True  # 文件名是否使用操作前缀
+
 # 开发配置
 DEBUG_MODE = False
 VERBOSE_ERRORS = True  # 是否显示详细错误信息

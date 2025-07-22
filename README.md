@@ -15,13 +15,14 @@
 - 旋转变换
 - 翻转操作 (水平/垂直)
 
-### 色彩调整 (6个工具)
+### 色彩调整 (7个工具)
 - 亮度调整
 - 对比度调整
 - 饱和度调整
 - 锐度调整
 - 灰度转换
 - 伽马校正
+- 不透明度调整
 
 ### 滤镜效果 (10个工具)
 - 模糊效果 (普通模糊、高斯模糊)
@@ -56,31 +57,10 @@
 
 ## 📊 项目统计
 
-- **总工具数**: 38个
-- **功能模块**: 7个
+- **总工具数**: 39个
 - **代码行数**: 6691 行高质量Python代码 (5294行代码 + 396行注释)
 - **测试覆盖**: 95%+
 - **支持格式**: JPEG, PNG, WebP, BMP, TIFF, GIF
-
-## 🚀 性能特性
-
-### 智能缓存系统
-- LRU缓存策略
-- 可配置缓存大小
-- 自动内存管理
-- 75%+ 缓存命中率
-
-### 并发处理
-- 异步任务处理
-- 多线程并行
-- 资源池管理
-- 最大4个并发任务
-
-### 性能监控
-- 实时性能统计
-- 内存使用监控
-- 处理时间跟踪
-- 错误率统计
 
 ## 🎯 使用示例
 
@@ -182,13 +162,6 @@ python main.py
 ```
 
 ### 3. 配置MCP客户端
-详细配置指南请参考：[MCP客户端配置指南](MCP_CLIENT_SETUP_GUIDE.md)
-
-**快速配置**：
-```bash
-# 自动生成配置文件
-python setup_mcp_clients.py
-```
 
 支持的客户端：
 - 🍒 **Cherry Studio** - 复制 `examples/cherry_studio_config.json` 内容
@@ -244,7 +217,7 @@ image-mcp-server/
 │   ├── __init__.py
 │   ├── image_utils.py     # 图片工具函数
 │   └── validation.py      # 参数验证
-│   └── image_processor.py      # 参数验证
+│   └── image_processor.py      # 图片处理类
 ├── tests/                 # 测试文件
 ├── environment.yml        # conda环境配置
 ├── requirements.txt       # pip依赖
@@ -269,7 +242,10 @@ image-mcp-server/
 - `adjust_brightness`: 调整亮度
 - `adjust_contrast`: 调整对比度
 - `adjust_saturation`: 调整饱和度
-- `adjust_hue`: 调整色调
+- `adjust_sharpness`: 调整锐度
+- `convert_to_grayscale`: 转换为灰度图
+- `adjust_gamma`: 调整伽马值
+- `adjust_opacity`: 调整不透明度
 
 ### 滤镜效果
 - `gaussian_blur`: 高斯模糊

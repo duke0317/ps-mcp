@@ -111,7 +111,7 @@ async def load_image(source: str) -> list[TextContent]:
         source: 图片源（文件路径或base64编码）
         
     Returns:
-        包含图片信息和base64数据的响应
+        包含图片信息和文件引用的响应
     """
     try:
         # 验证图片源
@@ -123,14 +123,14 @@ async def load_image(source: str) -> list[TextContent]:
         # 获取图片信息
         info = processor.get_image_info(image)
         
-        # 转换为base64
-        base64_data = processor.image_to_base64(image)
+        # 输出图片（文件引用模式）
+        output_info = processor.output_image(image, "loaded")
         
         result = {
             "success": True,
             "message": "图片加载成功",
             "data": {
-                "image_data": base64_data,
+                **output_info,
                 "info": info
             }
         }
@@ -283,7 +283,7 @@ async def convert_format(image_source: str, target_format: str, quality: int = 9
         quality: 图片质量
         
     Returns:
-        转换后的图片数据
+        转换后的图片文件引用
     """
     try:
         # 验证参数
@@ -302,14 +302,14 @@ async def convert_format(image_source: str, target_format: str, quality: int = 9
         # 获取原始格式
         original_format = image.format or 'PNG'
         
-        # 转换格式
-        converted_data = processor.image_to_base64(image, target_format)
+        # 输出转换后的图片
+        output_info = processor.output_image(image, f"convert_to_{target_format.lower()}", target_format, quality)
         
         result = {
             "success": True,
             "message": f"图片格式转换成功: {original_format} -> {target_format}",
             "data": {
-                "image_data": converted_data,
+                **output_info,
                 "original_format": original_format,
                 "target_format": target_format,
                 "quality": quality

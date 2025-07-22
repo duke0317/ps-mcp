@@ -7,10 +7,11 @@
 import os
 import sys
 from pathlib import Path
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Annotated, Union
 import json
 import traceback
 import asyncio
+from pydantic import Field
 
 # 添加项目根目录到Python路径
 project_root = Path(__file__).parent
@@ -56,7 +57,8 @@ from tools.color_adjust import (
     adjust_saturation as color_adjust_saturation,
     adjust_sharpness as color_adjust_sharpness,
     convert_to_grayscale as color_convert_to_grayscale,
-    adjust_gamma as color_adjust_gamma
+    adjust_gamma as color_adjust_gamma,
+    adjust_opacity as color_adjust_opacity
 )
 
 # Effects tools
@@ -103,7 +105,9 @@ mcp = FastMCP("PS-MCP")
 # ============ 基础工具 ============
 
 @mcp.tool()
-def load_image(source: str) -> str:
+def load_image(
+    source: Annotated[str, Field(description="图片文件路径或base64编码的图片数据。支持本地文件路径（如 'image.jpg'）或base64编码字符串")]
+) -> str:
     """加载图片文件或base64编码的图片"""
     try:
         result = safe_run_async(basic_load_image(source))
@@ -115,7 +119,12 @@ def load_image(source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def save_image(image_source: str, output_path: str, format: str = "PNG", quality: int = 95) -> str:
+def save_image(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    output_path: Annotated[str, Field(description="输出文件路径，包含文件名和扩展名（如 'output.png'）")],
+    format: Annotated[str, Field(description="图片格式，支持 PNG、JPEG、WEBP、BMP、TIFF 等", default="PNG")],
+    quality: Annotated[int, Field(description="图片质量，范围 1-100，仅对 JPEG 格式有效", ge=1, le=100, default=95)]
+) -> str:
     """保存图片到指定路径"""
     try:
         result = safe_run_async(basic_save_image(image_source, output_path, format, quality))
@@ -127,7 +136,9 @@ def save_image(image_source: str, output_path: str, format: str = "PNG", quality
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def get_image_info(image_source: str) -> str:
+def get_image_info(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """获取图片基本信息"""
     try:
         result = safe_run_async(basic_get_image_info(image_source))
@@ -139,7 +150,11 @@ def get_image_info(image_source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def convert_format(image_source: str, target_format: str, quality: int = 95) -> str:
+def convert_format(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    target_format: Annotated[str, Field(description="目标格式：PNG、JPEG、WEBP、BMP、TIFF、GIF 等")],
+    quality: Annotated[int, Field(description="图片质量，范围 1-100，仅对 JPEG 格式有效", ge=1, le=100, default=95)]
+) -> str:
     """转换图片格式"""
     try:
         result = safe_run_async(basic_convert_format(image_source, target_format, quality))
@@ -153,7 +168,13 @@ def convert_format(image_source: str, target_format: str, quality: int = 95) -> 
 # ============ 几何变换工具 ============
 
 @mcp.tool()
-def resize_image(image_source: str, width: int, height: int, keep_aspect_ratio: bool = True, resample: str = "LANCZOS") -> str:
+def resize_image(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    width: Annotated[int, Field(description="目标宽度（像素）", gt=0)],
+    height: Annotated[int, Field(description="目标高度（像素）", gt=0)],
+    keep_aspect_ratio: Annotated[bool, Field(description="是否保持宽高比，True时会按比例缩放", default=True)],
+    resample: Annotated[str, Field(description="重采样算法：LANCZOS（高质量）、BILINEAR（平滑）、NEAREST（快速）", default="LANCZOS")]
+) -> str:
     """调整图片大小"""
     try:
         result = safe_run_async(transform_resize_image(image_source, width, height, keep_aspect_ratio, resample))
@@ -165,7 +186,13 @@ def resize_image(image_source: str, width: int, height: int, keep_aspect_ratio: 
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def crop_image(image_source: str, left: int, top: int, right: int, bottom: int) -> str:
+def crop_image(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    left: Annotated[int, Field(description="裁剪区域左边界坐标（像素）", ge=0)],
+    top: Annotated[int, Field(description="裁剪区域上边界坐标（像素）", ge=0)],
+    right: Annotated[int, Field(description="裁剪区域右边界坐标（像素）", gt=0)],
+    bottom: Annotated[int, Field(description="裁剪区域下边界坐标（像素）", gt=0)]
+) -> str:
     """裁剪图片"""
     try:
         result = safe_run_async(transform_crop_image(image_source, left, top, right, bottom))
@@ -177,7 +204,12 @@ def crop_image(image_source: str, left: int, top: int, right: int, bottom: int) 
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def rotate_image(image_source: str, angle: float, expand: bool = True, fill_color: str = "#FFFFFF") -> str:
+def rotate_image(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    angle: Annotated[float, Field(description="旋转角度（度），正值为顺时针，负值为逆时针")],
+    expand: Annotated[bool, Field(description="是否扩展画布以容纳旋转后的图片，False会裁剪", default=True)],
+    fill_color: Annotated[str, Field(description="填充颜色，十六进制格式如 #FFFFFF（白色）", default="#FFFFFF")]
+) -> str:
     """旋转图片"""
     try:
         result = safe_run_async(transform_rotate_image(image_source, angle, expand, fill_color))
@@ -189,7 +221,10 @@ def rotate_image(image_source: str, angle: float, expand: bool = True, fill_colo
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def flip_image(image_source: str, direction: str) -> str:
+def flip_image(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    direction: Annotated[str, Field(description="翻转方向：horizontal（水平翻转）或 vertical（垂直翻转）")]
+) -> str:
     """翻转图片"""
     try:
         result = safe_run_async(transform_flip_image(image_source, direction))
@@ -203,7 +238,10 @@ def flip_image(image_source: str, direction: str) -> str:
 # ============ 滤镜工具 ============
 
 @mcp.tool()
-def apply_blur(image_source: str, radius: float) -> str:
+def apply_blur(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    radius: Annotated[float, Field(description="模糊半径，值越大模糊效果越强", ge=0.1)]
+) -> str:
     """应用模糊滤镜"""
     try:
         result = safe_run_async(filters_apply_blur(image_source, radius))
@@ -215,7 +253,10 @@ def apply_blur(image_source: str, radius: float) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_gaussian_blur(image_source: str, radius: float) -> str:
+def apply_gaussian_blur(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    radius: Annotated[float, Field(description="高斯模糊半径，值越大模糊效果越强", ge=0.1)]
+) -> str:
     """应用高斯模糊滤镜"""
     try:
         result = safe_run_async(filters_apply_gaussian_blur(image_source, radius))
@@ -227,7 +268,9 @@ def apply_gaussian_blur(image_source: str, radius: float) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_sharpen(image_source: str) -> str:
+def apply_sharpen(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """应用锐化滤镜"""
     try:
         result = safe_run_async(filters_apply_sharpen(image_source))
@@ -239,7 +282,9 @@ def apply_sharpen(image_source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_edge_enhance(image_source: str) -> str:
+def apply_edge_enhance(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """应用边缘增强滤镜"""
     try:
         result = safe_run_async(filters_apply_edge_enhance(image_source))
@@ -251,7 +296,9 @@ def apply_edge_enhance(image_source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_emboss(image_source: str) -> str:
+def apply_emboss(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """应用浮雕滤镜"""
     try:
         result = safe_run_async(filters_apply_emboss(image_source))
@@ -263,7 +310,9 @@ def apply_emboss(image_source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_find_edges(image_source: str) -> str:
+def apply_find_edges(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """应用边缘检测滤镜"""
     try:
         result = safe_run_async(filters_apply_find_edges(image_source))
@@ -275,7 +324,9 @@ def apply_find_edges(image_source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_smooth(image_source: str) -> str:
+def apply_smooth(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """应用平滑滤镜"""
     try:
         result = safe_run_async(filters_apply_smooth(image_source))
@@ -287,7 +338,9 @@ def apply_smooth(image_source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_contour(image_source: str) -> str:
+def apply_contour(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """应用轮廓滤镜"""
     try:
         result = safe_run_async(filters_apply_contour(image_source))
@@ -299,7 +352,9 @@ def apply_contour(image_source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_sepia(image_source: str) -> str:
+def apply_sepia(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """应用复古棕褐色滤镜"""
     try:
         result = safe_run_async(filters_apply_sepia(image_source))
@@ -311,7 +366,9 @@ def apply_sepia(image_source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_invert(image_source: str) -> str:
+def apply_invert(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """应用反色滤镜"""
     try:
         result = safe_run_async(filters_apply_invert(image_source))
@@ -325,7 +382,10 @@ def apply_invert(image_source: str) -> str:
 # ============ 色彩调整工具 ============
 
 @mcp.tool()
-def adjust_brightness(image_source: str, factor: float) -> str:
+def adjust_brightness(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    factor: Annotated[float, Field(description="亮度调整因子，1.0为原始亮度，>1.0变亮，<1.0变暗", gt=0)]
+) -> str:
     """调整图片亮度"""
     try:
         result = safe_run_async(color_adjust_brightness(image_source, factor))
@@ -337,7 +397,10 @@ def adjust_brightness(image_source: str, factor: float) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def adjust_contrast(image_source: str, factor: float) -> str:
+def adjust_contrast(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    factor: Annotated[float, Field(description="对比度调整因子，1.0为原始对比度，>1.0增强，<1.0减弱", gt=0)]
+) -> str:
     """调整图片对比度"""
     try:
         result = safe_run_async(color_adjust_contrast(image_source, factor))
@@ -349,7 +412,10 @@ def adjust_contrast(image_source: str, factor: float) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def adjust_saturation(image_source: str, factor: float) -> str:
+def adjust_saturation(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    factor: Annotated[float, Field(description="饱和度调整因子，1.0为原始饱和度，>1.0增强，<1.0减弱，0为灰度", ge=0)]
+) -> str:
     """调整图片饱和度"""
     try:
         result = safe_run_async(color_adjust_saturation(image_source, factor))
@@ -361,7 +427,10 @@ def adjust_saturation(image_source: str, factor: float) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def adjust_sharpness(image_source: str, factor: float) -> str:
+def adjust_sharpness(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    factor: Annotated[float, Field(description="锐度调整因子，1.0为原始锐度，>1.0增强，<1.0减弱", gt=0)]
+) -> str:
     """调整图片锐度"""
     try:
         result = safe_run_async(color_adjust_sharpness(image_source, factor))
@@ -373,7 +442,9 @@ def adjust_sharpness(image_source: str, factor: float) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def convert_to_grayscale(image_source: str) -> str:
+def convert_to_grayscale(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")]
+) -> str:
     """将图片转换为灰度图"""
     try:
         result = safe_run_async(color_convert_to_grayscale(image_source))
@@ -385,7 +456,10 @@ def convert_to_grayscale(image_source: str) -> str:
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def adjust_gamma(image_source: str, gamma: float) -> str:
+def adjust_gamma(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    gamma: Annotated[float, Field(description="伽马值，1.0为原始，>1.0变亮，<1.0变暗", gt=0)]
+) -> str:
     """调整图片伽马值"""
     try:
         result = safe_run_async(color_adjust_gamma(image_source, gamma))
@@ -396,11 +470,32 @@ def adjust_gamma(image_source: str, gamma: float) -> str:
             "error": f"调整伽马值失败: {str(e)}"
         }, ensure_ascii=False, indent=2)
 
+@mcp.tool()
+def adjust_opacity(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    opacity: Annotated[float, Field(description="不透明度，范围 0.0-1.0，0.0为完全透明，1.0为完全不透明", ge=0.0, le=1.0)]
+) -> str:
+    """调整图片不透明度"""
+    try:
+        result = safe_run_async(color_adjust_opacity(image_source, opacity))
+        return result[0].text
+    except Exception as e:
+        return json.dumps({
+            "success": False,
+            "error": f"调整不透明度失败: {str(e)}"
+        }, ensure_ascii=False, indent=2)
+
 # ============ 特效工具 ============
 
 @mcp.tool()
-def add_border(image_source: str, border_width: int = 10, border_color: str = "#000000", 
-                   border_style: str = "solid", corner_radius: int = 10, output_format: str = "PNG") -> str:
+def add_border(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    border_width: Annotated[int, Field(description="边框宽度（像素）", ge=1, default=10)],
+    border_color: Annotated[str, Field(description="边框颜色，十六进制格式如 #000000（黑色）", default="#000000")],
+    border_style: Annotated[str, Field(description="边框样式：solid（实线）、dashed（虚线）、dotted（点线）", default="solid")],
+    corner_radius: Annotated[int, Field(description="圆角半径（像素），0为直角", ge=0, default=10)],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """为图片添加边框效果"""
     try:
         arguments = {
@@ -420,9 +515,13 @@ def add_border(image_source: str, border_width: int = 10, border_color: str = "#
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def create_silhouette(image_source: str, silhouette_color: str = "#000000", 
-                          background_color: str = "transparent", threshold: int = 128, 
-                          output_format: str = "PNG") -> str:
+def create_silhouette(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    silhouette_color: Annotated[str, Field(description="剪影颜色，十六进制格式如 #000000（黑色）", default="#000000")],
+    background_color: Annotated[str, Field(description="背景颜色，十六进制格式或 'transparent'（透明）", default="transparent")],
+    threshold: Annotated[int, Field(description="阈值，范围 0-255，用于确定剪影边界", ge=0, le=255, default=128)],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """创建图片的剪影效果"""
     try:
         arguments = {
@@ -441,9 +540,15 @@ def create_silhouette(image_source: str, silhouette_color: str = "#000000",
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def add_shadow(image_source: str, shadow_color: str = "#808080", shadow_offset_x: int = 5,
-                   shadow_offset_y: int = 5, shadow_blur: int = 5, shadow_opacity: float = 0.5,
-                   output_format: str = "PNG") -> str:
+def add_shadow(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    shadow_color: Annotated[str, Field(description="阴影颜色，十六进制格式如 #808080（灰色）", default="#808080")],
+    shadow_offset_x: Annotated[int, Field(description="阴影水平偏移（像素），正值向右，负值向左", default=5)],
+    shadow_offset_y: Annotated[int, Field(description="阴影垂直偏移（像素），正值向下，负值向上", default=5)],
+    shadow_blur: Annotated[int, Field(description="阴影模糊半径（像素）", ge=0, default=5)],
+    shadow_opacity: Annotated[float, Field(description="阴影不透明度，范围 0.0-1.0", ge=0.0, le=1.0, default=0.5)],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """为图片添加阴影效果"""
     try:
         arguments = {
@@ -464,9 +569,15 @@ def add_shadow(image_source: str, shadow_color: str = "#808080", shadow_offset_x
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def add_watermark(image_source: str, watermark_text: str = None, watermark_image: str = None,
-                      position: str = "bottom-right", opacity: float = 0.5, scale: float = 1.0,
-                      output_format: str = "PNG") -> str:
+def add_watermark(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    watermark_text: Annotated[Optional[str], Field(description="水印文字内容，与watermark_image二选一", default=None)],
+    watermark_image: Annotated[Optional[str], Field(description="水印图片路径或base64数据，与watermark_text二选一", default=None)],
+    position: Annotated[str, Field(description="水印位置：top-left、top-right、bottom-left、bottom-right、center", default="bottom-right")],
+    opacity: Annotated[float, Field(description="水印不透明度，范围 0.0-1.0", ge=0.0, le=1.0, default=0.5)],
+    scale: Annotated[float, Field(description="水印缩放比例，1.0为原始大小", gt=0, default=1.0)],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """为图片添加水印"""
     try:
         arguments = {
@@ -490,7 +601,11 @@ def add_watermark(image_source: str, watermark_text: str = None, watermark_image
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def apply_vignette(image_source: str, strength: float = 0.5, output_format: str = "PNG") -> str:
+def apply_vignette(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    strength: Annotated[float, Field(description="晕影强度，范围 0.0-1.0，值越大效果越明显", ge=0.0, le=1.0, default=0.5)],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """应用晕影效果"""
     try:
         arguments = {
@@ -507,8 +622,12 @@ def apply_vignette(image_source: str, strength: float = 0.5, output_format: str 
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def create_polaroid(image_source: str, border_width: int = 20, shadow: bool = True,
-                        output_format: str = "PNG") -> str:
+def create_polaroid(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    border_width: Annotated[int, Field(description="宝丽来边框宽度（像素）", ge=1, default=20)],
+    shadow: Annotated[bool, Field(description="是否添加阴影效果", default=True)],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """创建宝丽来风格效果"""
     try:
         arguments = {
@@ -528,8 +647,13 @@ def create_polaroid(image_source: str, border_width: int = 20, shadow: bool = Tr
 # ============ 高级工具 ============
 
 @mcp.tool()
-def batch_resize(image_sources: list, target_width: int, target_height: int, 
-                     keep_aspect_ratio: bool = True, output_format: str = "PNG") -> str:
+def batch_resize(
+    image_sources: Annotated[list, Field(description="图片源列表，每个元素可以是文件路径或base64编码的图片数据")],
+    target_width: Annotated[int, Field(description="目标宽度（像素）", ge=1)],
+    target_height: Annotated[int, Field(description="目标高度（像素）", ge=1)],
+    keep_aspect_ratio: Annotated[bool, Field(description="是否保持宽高比", default=True)],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """批量调整图片大小"""
     try:
         arguments = {
@@ -548,8 +672,13 @@ def batch_resize(image_sources: list, target_width: int, target_height: int,
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def create_collage(image_sources: list, layout: str = "grid", spacing: int = 10,
-                       background_color: str = "#FFFFFF", output_format: str = "PNG") -> str:
+def create_collage(
+    image_sources: Annotated[list, Field(description="图片源列表，每个元素可以是文件路径或base64编码的图片数据")],
+    layout: Annotated[str, Field(description="布局方式：grid（网格）、horizontal（水平）、vertical（垂直）", default="grid")],
+    spacing: Annotated[int, Field(description="图片间距（像素）", ge=0, default=10)],
+    background_color: Annotated[str, Field(description="背景颜色，支持十六进制颜色代码", default="#FFFFFF")],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """创建图片拼贴"""
     try:
         arguments = {
@@ -568,9 +697,14 @@ def create_collage(image_sources: list, layout: str = "grid", spacing: int = 10,
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def create_thumbnail_grid(image_sources: list, thumbnail_size: int = 150, 
-                              grid_columns: int = 4, spacing: int = 10,
-                              background_color: str = "#FFFFFF", output_format: str = "PNG") -> str:
+def create_thumbnail_grid(
+    image_sources: Annotated[list, Field(description="图片源列表，每个元素可以是文件路径或base64编码的图片数据")],
+    thumbnail_size: Annotated[int, Field(description="缩略图大小（像素）", ge=50, default=150)],
+    grid_columns: Annotated[int, Field(description="网格列数", ge=1, default=4)],
+    spacing: Annotated[int, Field(description="图片间距（像素）", ge=0, default=10)],
+    background_color: Annotated[str, Field(description="背景颜色，支持十六进制颜色代码", default="#FFFFFF")],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """创建缩略图网格"""
     try:
         arguments = {
@@ -590,8 +724,13 @@ def create_thumbnail_grid(image_sources: list, thumbnail_size: int = 150,
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def blend_images(image1_source: str, image2_source: str, blend_mode: str = "normal",
-                     opacity: float = 0.5, output_format: str = "PNG") -> str:
+def blend_images(
+    image1_source: Annotated[str, Field(description="第一张图片源，可以是文件路径或base64编码的图片数据")],
+    image2_source: Annotated[str, Field(description="第二张图片源，可以是文件路径或base64编码的图片数据")],
+    blend_mode: Annotated[str, Field(description="混合模式：normal（正常）、multiply（正片叠底）、screen（滤色）、overlay（叠加）", default="normal")],
+    opacity: Annotated[float, Field(description="第二张图片的不透明度，范围 0.0-1.0", ge=0.0, le=1.0, default=0.5)],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """混合两张图片"""
     try:
         arguments = {
@@ -610,7 +749,11 @@ def blend_images(image1_source: str, image2_source: str, blend_mode: str = "norm
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def extract_colors(image_source: str, num_colors: int = 5, output_format: str = "PNG") -> str:
+def extract_colors(
+    image_source: Annotated[str, Field(description="图片源，可以是文件路径或base64编码的图片数据")],
+    num_colors: Annotated[int, Field(description="要提取的主要颜色数量", ge=1, le=20, default=5)],
+    output_format: Annotated[str, Field(description="输出格式：PNG、JPEG、WEBP 等", default="PNG")]
+) -> str:
     """提取图片主要颜色"""
     try:
         arguments = {
@@ -627,7 +770,11 @@ def extract_colors(image_source: str, num_colors: int = 5, output_format: str = 
         }, ensure_ascii=False, indent=2)
 
 @mcp.tool()
-def create_gif(image_sources: list, duration: int = 500, loop: int = 0) -> str:
+def create_gif(
+    image_sources: Annotated[list, Field(description="图片源列表，每个元素可以是文件路径或base64编码的图片数据")],
+    duration: Annotated[int, Field(description="每帧持续时间（毫秒）", ge=50, default=500)],
+    loop: Annotated[int, Field(description="循环次数，0表示无限循环", ge=0, default=0)]
+) -> str:
     """创建GIF动画"""
     try:
         arguments = {

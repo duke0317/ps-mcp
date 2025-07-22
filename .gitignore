@@ -3,3 +3,4 @@ __pycache__
 logs
 .pytest_cache
 .trae
+temp

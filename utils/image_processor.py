@@ -7,7 +7,9 @@ from PIL import Image
 import base64
 import io
 import os
+import uuid
 from typing import Union, Tuple, Optional
+from config import OUTPUT_MODE, TEMP_DIR, USE_OPERATION_PREFIX
 
 class ImageProcessor:
     """核心图片处理类"""
@@ -15,6 +17,10 @@ class ImageProcessor:
     def __init__(self):
         self.supported_formats = ['JPEG', 'PNG', 'BMP', 'TIFF', 'WEBP']
         self.max_image_size = (4096, 4096)  # 最大图片尺寸限制
+        
+        # 确保临时目录存在
+        if not os.path.exists(TEMP_DIR):
+            os.makedirs(TEMP_DIR, exist_ok=True)
     
     def load_image(self, source: Union[str, bytes]) -> Image.Image:
         """
@@ -137,3 +143,66 @@ class ImageProcessor:
             'width': image.width,
             'height': image.height
         }
+    
+    def save_temp_image(self, image: Image.Image, operation: str = "processed", 
+                       format: str = 'PNG', quality: int = 95) -> str:
+        """
+        保存图片到临时目录并返回文件路径
+        
+        Args:
+            image: PIL Image对象
+            operation: 操作名称，用于文件名前缀
+            format: 图片格式
+            quality: 图片质量
+            
+        Returns:
+            临时文件路径
+        """
+        try:
+            # 生成唯一文件名
+            unique_id = str(uuid.uuid4())[:8]
+            
+            if USE_OPERATION_PREFIX:
+                filename = f"{operation}_{unique_id}.{format.lower()}"
+            else:
+                filename = f"{unique_id}.{format.lower()}"
+            
+            temp_path = os.path.join(TEMP_DIR, filename)
+            
+            # 保存图片
+            return self.save_image(image, temp_path, format, quality)
+            
+        except Exception as e:
+            raise IOError(f"保存临时图片失败: {str(e)}")
+    
+    def output_image(self, image: Image.Image, operation: str = "processed", 
+                    format: str = 'PNG', quality: int = 95) -> dict:
+        """
+        根据配置输出图片（文件引用模式）
+        
+        Args:
+            image: PIL Image对象
+            operation: 操作名称
+            format: 图片格式
+            quality: 图片质量
+            
+        Returns:
+            包含输出信息的字典
+        """
+        try:
+            # 保存到临时文件
+            temp_path = self.save_temp_image(image, operation, format, quality)
+            
+            # 获取文件信息
+            file_size = os.path.getsize(temp_path)
+            
+            return {
+                "output_type": "file_reference",
+                "file_path": temp_path,
+                "format": format,
+                "file_size": file_size,
+                "operation": operation
+            }
+            
+        except Exception as e:
+            raise IOError(f"输出图片失败: {str(e)}")
