@@ -465,6 +465,17 @@ async def test_image_processing():
                 print(f"✅ 测试 31: 应用平滑滤镜")
                 print(f"结果: {processed_result}")
                 
+                # 测试32: 创建GIF动画
+                print("\n🎬 测试32: 创建GIF动画...")
+                result = await session.call_tool("create_gif", {
+                    "image_sources": [test_image, test_image, test_image],
+                    "duration": 1000,
+                    "loop": 0  # 0表示无限循环
+                })
+                processed_result = process_test_result(result, "创建GIF动画", 32)
+                print(f"✅ 测试 32: 创建GIF动画")
+                print(f"结果: {processed_result}")
+                
                 print("\n🎉 所有图片处理功能测试完成!")
                 
                 # 测试总结
@@ -476,10 +487,10 @@ async def test_image_processing():
                 print("✅ 滤镜工具测试: 9个")
                 print("✅ 色彩调整工具测试: 7个")
                 print("✅ 特效工具测试: 6个")
-                print("✅ 高级工具测试: 2个")
+                print("✅ 高级工具测试: 3个")  # 从2个增加到3个
                 print("✅ 性能监控工具测试: 1个")
                 print("-"*60)
-                print("🎯 总计: 31个测试用例全部完成")
+                print("🎯 总计: 32个测试用例全部完成")  # 从31个增加到32个
                 print("="*60)
                 
     except Exception as e:

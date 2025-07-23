@@ -958,7 +958,7 @@ async def create_gif(arguments: Dict[str, Any]) -> List[TextContent]:
             raise ValidationError("至少需要2张图片")
         
         duration = arguments.get("duration", 500)
-        loop = arguments.get("loop", True)
+        loop = arguments.get("loop", 0)  # 默认0表示无限循环
         optimize = arguments.get("optimize", True)
         resize_to = arguments.get("resize_to")
         
@@ -997,38 +997,48 @@ async def create_gif(arguments: Dict[str, Any]) -> List[TextContent]:
             target_size = frames[0].size
             frames = [frame.resize(target_size, Image.Resampling.LANCZOS) for frame in frames]
         
-        # 创建GIF
-        import io
-        gif_buffer = io.BytesIO()
+        # 生成唯一文件名并保存到temp目录
+        import uuid
+        import os
+        from config import TEMP_DIR
         
+        unique_id = str(uuid.uuid4())[:8]
+        gif_filename = f"gif_{unique_id}.gif"
+        gif_path = os.path.join(TEMP_DIR, gif_filename)
+        
+        # 确保temp目录存在
+        os.makedirs(TEMP_DIR, exist_ok=True)
+        
+        # 创建并保存GIF
         frames[0].save(
-            gif_buffer,
+            gif_path,
             format="GIF",
             save_all=True,
             append_images=frames[1:],
             duration=duration,
-            loop=0 if loop else 1,
+            loop=loop,  # 直接使用传入的整数值：0=无限循环，1=播放一次，n=循环n次
             optimize=optimize
         )
         
-        # 转换为base64
-        gif_buffer.seek(0)
-        gif_data = gif_buffer.getvalue()
-        gif_base64 = f"data:image/gif;base64,{processor._bytes_to_base64(gif_data)}"
+        # 获取文件大小
+        file_size = os.path.getsize(gif_path)
         
         return [TextContent(
             type="text",
             text=json.dumps({
                 "success": True,
                 "message": f"成功创建包含{len(frames)}帧的GIF动画",
-                "result": gif_base64,
-                "metadata": {
+                "data": {
+                    "output_type": "file_reference",
+                    "file_path": gif_path,
+                    "format": "GIF",
+                    "file_size": file_size,
+                    "operation": "create_gif",
                     "frame_count": len(frames),
-                    "size": f"{frames[0].width}x{frames[0].height}",
+                    "size": [frames[0].width, frames[0].height],
                     "duration": duration,
                     "loop": loop,
-                    "optimize": optimize,
-                    "file_size": len(gif_data)
+                    "optimize": optimize
                 }
             }, ensure_ascii=False)
         )]
