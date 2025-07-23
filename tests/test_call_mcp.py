@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-创建测试图片并测试FastMCP服务器的图片处理功能
+使用 uv 虚拟环境测试 PS-MCP 图片处理服务器功能
 
 本测试脚本包含以下工具类别的全面测试：
 
@@ -48,7 +48,7 @@
 📂 性能监控工具 (Performance Tools):
    - get_performance_stats: 获取性能统计信息
 
-总计: 30个测试用例，覆盖所有主要功能模块
+总计: 31个测试用例，覆盖所有主要功能模块
 """
 
 import asyncio
@@ -57,48 +57,13 @@ import sys
 import os
 from pathlib import Path
 import traceback
-import base64
-import re
-from PIL import Image, ImageDraw
 
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-def save_base64_image(base64_data, filename):
-    """
-    保存base64编码的图片到output目录
-    
-    Args:
-        base64_data: base64编码的图片数据
-        filename: 保存的文件名
-    
-    Returns:
-        保存的文件路径
-    """
-    try:
-        # 确保output目录存在
-        output_dir = Path("output")
-        output_dir.mkdir(exist_ok=True)
-        
-        # 提取base64数据（去掉data:image/xxx;base64,前缀）
-        if "base64," in base64_data:
-            base64_data = base64_data.split("base64,")[1]
-        
-        # 解码并保存
-        image_data = base64.b64decode(base64_data)
-        file_path = output_dir / filename
-        
-        with open(file_path, "wb") as f:
-            f.write(image_data)
-        
-        return str(file_path)
-    except Exception as e:
-        print(f"保存图片失败: {e}")
-        return None
-
 def process_test_result(result, test_name, test_number):
     """
-    处理测试结果，提取并保存图片数据
+    处理测试结果，简化输出显示
     
     Args:
         result: 测试结果
@@ -116,44 +81,20 @@ def process_test_result(result, test_name, test_number):
         result_data = json.loads(result_text)
         
         if result_data.get("success"):
-            # 检查新的输出格式
             data = result_data.get("data", {})
             
-            # 新格式：包含 file_path 和其他信息（可能没有 image_data）
-            if "file_path" in data:
-                # 创建清理后的数据副本
+            # 如果有图片数据，只显示成功信息，不保存文件
+            if "image_data" in data:
                 clean_data = result_data.copy()
-                
-                # 如果有 image_data，替换为文件路径信息
-                if "image_data" in data:
-                    clean_data["data"]["image_data"] = f"Base64数据已保存到: {data['file_path']}"
-                
-                # 显示文件信息
-                file_info = f"文件已保存到: {data['file_path']}"
-                if "file_size" in data:
-                    file_info += f" (大小: {data['file_size']} 字节)"
-                if "format" in data:
-                    file_info += f" (格式: {data['format']})"
-                
-                clean_data["data"]["file_info"] = file_info
-                
+                clean_data["data"]["image_data"] = "✅ 图片处理成功 (Base64数据已生成)"
                 return json.dumps(clean_data, ensure_ascii=False, indent=2)
             
-            # 兼容旧格式：只有 image_data
-            elif "image_data" in data:
-                base64_data = data["image_data"]
-                
-                # 生成文件名并保存
-                safe_test_name = re.sub(r'[^\w\-_]', '_', test_name)
-                filename = f"test_{test_number:02d}_{safe_test_name}.png"
-                saved_path = save_base64_image(base64_data, filename)
-                
-                if saved_path:
-                    clean_data = result_data.copy()
-                    clean_data["data"]["image_data"] = f"已保存到: {saved_path}"
-                    return json.dumps(clean_data, ensure_ascii=False, indent=2)
-                else:
-                    return result_text
+            # 如果有文件路径信息
+            elif "file_path" in data:
+                clean_data = result_data.copy()
+                if "image_data" in data:
+                    clean_data["data"]["image_data"] = "✅ 图片处理成功 (Base64数据已生成)"
+                return json.dumps(clean_data, ensure_ascii=False, indent=2)
             
             # 没有图片数据的结果（如性能统计、图片信息等）
             else:
@@ -167,44 +108,38 @@ def process_test_result(result, test_name, test_number):
     except Exception as e:
         return f"处理结果时出错: {e}\n原始结果: {result_text}"
 
-def create_test_image():
-    """创建一个测试图片"""
-    # 创建一个简单的测试图片
-    # img = Image.new('RGB', (200, 200), color='lightblue')
-    # draw = ImageDraw.Draw(img)
+def get_test_image_path():
+    """获取测试图片路径"""
+    current_dir = Path(__file__).parent
+    test_image_path = current_dir / "test_image.png"
     
-    # # 绘制一些图形
-    # draw.rectangle([50, 50, 150, 150], fill='red', outline='black', width=2)
-    # draw.ellipse([75, 75, 125, 125], fill='yellow')
+    if not test_image_path.exists():
+        raise FileNotFoundError(f"测试图片不存在: {test_image_path}")
     
-    # 保存测试图片
-    # test_image_path = "test_image.png"
-    test_image_path = "D:\\Documents\\Pictures\\20250428091250.png"
-    # img.save(test_image_path)
-    print(f"✅ 创建测试图片: {test_image_path}")
-    return test_image_path
+    return str(test_image_path)
 
 async def test_image_processing():
     """测试图片处理功能"""
-    print("🧪 PS-MCP 图片处理功能测试...")
+    print("🧪 PS-MCP 图片处理功能测试 (使用 uv 虚拟环境)...")
     
-    # 创建测试图片
-    test_image = create_test_image()
+    # 获取测试图片路径
+    test_image = get_test_image_path()
+    print(f"📸 使用测试图片: {test_image}")
     
     # 配置路径
     current_dir = Path(__file__).parent.parent  # 回到项目根目录
     server_script = current_dir / "main.py"
-    python_path = r"D:\App\Miniconda3\envs\image-mcp\python.exe"
     
     try:
-        # 设置服务器参数
+        # 设置服务器参数 - 使用 uv 运行环境
         server_params = StdioServerParameters(
-            command=python_path,
-            args=[str(server_script), "stdio"],
-            env=dict(os.environ)
+            command="uv",
+            args=["run", "python", str(server_script), "stdio"],
+            env=dict(os.environ),
+            cwd=str(current_dir)
         )
         
-        print("🔌 连接到PS-MCP FastMCP服务器...")
+        print("🔌 连接到PS-MCP FastMCP服务器 (uv 环境)...")
         
         # 连接到服务器
         async with stdio_client(server_params) as (read, write):

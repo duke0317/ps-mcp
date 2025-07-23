@@ -1,9 +1,11 @@
 {
-  "cline.mcpServers": {
+  "mcpServers": {
     "ps-mcp": {
-      "command": "python",
+      "command": "uv",
       "args": [
-        "F:\\AiWorkSpace\\ps-mcp\\main.py"
+        "run",
+        "python",
+        "main.py"
       ],
       "cwd": "F:\\AiWorkSpace\\ps-mcp"
     }

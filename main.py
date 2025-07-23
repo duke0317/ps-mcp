@@ -820,6 +820,10 @@ def reset_performance_stats() -> str:
             "error": f"重置性能统计失败: {str(e)}"
         }, ensure_ascii=False, indent=2)
 
-if __name__ == "__main__":
-    print(f"start PS-MCP server...",file=sys.stderr)
+def main():
+    """主程序入口点，用于 uv 脚本运行"""
+    print("start PS-MCP image server...", file=sys.stderr)
     mcp.run()
+
+if __name__ == "__main__":
+    main()

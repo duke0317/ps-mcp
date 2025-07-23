@@ -58,7 +58,6 @@
 ## 📊 项目统计
 
 - **总工具数**: 39个
-- **代码行数**: 6691 行高质量Python代码 (5294行代码 + 396行注释)
 - **测试覆盖**: 95%+
 - **支持格式**: JPEG, PNG, WebP, BMP, TIFF, GIF
 
@@ -119,55 +118,58 @@
 ## 环境要求
 
 - Python 3.11+
-- conda (推荐) 或 pip
+- uv (现代 Python 包管理器)
 - 支持的操作系统: Windows, macOS, Linux
 
 ## 🚀 快速开始
 
-### 1. 环境搭建
+### 1. 安装 uv
 
-使用conda创建虚拟环境（推荐）：
+**Windows (PowerShell):**
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**macOS/Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+### 2. 安装项目依赖
 
 ```bash
 # 克隆或下载项目
-cd image-mcp-server
+cd ps-mcp
 
-# 创建conda环境
-conda env create -f environment.yml
+# 安装依赖（会自动创建虚拟环境）
+uv sync
 
-# 激活环境
-conda activate image-mcp
+# Windows 用户也可以直接运行
+install.bat
 ```
 
-或使用pip安装：
+### 3. 运行服务器
 
 ```bash
-# 创建虚拟环境
-python -m venv venv
+# 方式1: 使用 uv 直接运行
+uv run python main.py
 
-# 激活虚拟环境
-# Windows:
-venv\Scripts\activate
-# macOS/Linux:
-source venv/bin/activate
+# 方式2: Windows 用户可以直接运行
+run.bat
 
-# 安装依赖
-pip install -r requirements.txt
-```
-
-### 2. 运行服务器
-
-```bash
+# 方式3: 激活环境后运行
+uv shell
 python main.py
 ```
 
-### 3. 配置MCP客户端
+### 4. 配置MCP客户端
 
 支持的客户端：
 - 🍒 **Cherry Studio** - 复制 `examples/cherry_studio_config.json` 内容
 - 🖱️ **Cursor** - 复制 `examples/cursor_config.json` 内容  
 - 🔧 **Cline** - 复制 `examples/cline_settings.json` 内容
 - 💬 **Claude Desktop** - 复制 `examples/claude_desktop_config.json` 内容
+- 💡 **注意**: 替换路径为实际项目路径
 
 ### 测试连接
 在MCP客户端中尝试：
@@ -175,7 +177,7 @@ python main.py
 请帮我获取一张图片的信息
 ```
 
-### 4. 使用示例
+### 5. 使用示例
 
 服务器启动后，可以通过MCP协议调用各种图片处理功能：
 
@@ -268,22 +270,23 @@ python -m pytest tests/
 # 运行特定测试文件
 python -m pytest tests/test_image_processor.py
 
-# 生成测试覆盖率报告
-python -m pytest --cov=. tests/
 ```
 
-### 代码格式化
+### 功能测试
+
+运行功能测试：
 
 ```bash
-# 格式化代码
-black .
-
-# 检查代码风格
-flake8 .
-
-# 类型检查
-mypy .
+uv run python tests\test_call_mcp.py
 ```
+
+或者使用批处理文件（Windows）：
+
+```bash
+run_tests.bat
+```
+
+测试将使用 `tests/test_image.png` 作为测试图片，验证所有图片处理功能是否正常工作。
 
 ## 技术架构
 
@@ -325,7 +328,6 @@ mypy .
 
 1. 查看 [Issues](../../issues) 页面
 2. 创建新的 Issue
-3. 联系开发团队
 
 ---
 
