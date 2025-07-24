@@ -2,6 +2,10 @@
 
 一个基于 Model Context Protocol (MCP) 的专业图片处理服务器，提供全面的图片处理功能。
 
+<a href="https://glama.ai/mcp/servers/@duke0317/ps-mcp">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@duke0317/ps-mcp/badge" alt="Image Processing Server MCP server" />
+</a>
+
 ## 🎯 功能特性
 
 ### 基础操作 (4个工具)
